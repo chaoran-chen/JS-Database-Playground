@@ -1,0 +1,9 @@
+node_modules/
+bower_components/
+tpch-1/
+
+# IntelliJ
+.idea/
+*.iml
+
+
