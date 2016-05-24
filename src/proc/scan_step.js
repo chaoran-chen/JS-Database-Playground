@@ -3,6 +3,7 @@ goog.provide('jdp.proc.ScanStep');
 goog.require('jdp.proc.Step');
 goog.require('jdp.ColumnDefinition');
 goog.require('jdp.utils.codeGen');
+goog.require('lf.Type');
 
 
 /**
@@ -138,40 +139,70 @@ jdp.proc.ScanStep.prototype.generateCode = function (prefix) {
           }
         }
       });
-    // order___order_id = p_col_order_id.get(p_i);
-    valueAssignments.push(
-      {
-        "type": "ExpressionStatement",
-        "expression": {
-          "type": "AssignmentExpression",
-          "operator": "=",
-          "left": {
-            "type": "Identifier",
-            "name": cd.getFullName()
-          },
-          "right": {
-            "type": "CallExpression",
-            "callee": {
-              "type": "MemberExpression",
-              "computed": false,
-              "object": {
+    switch(cd.getType()){
+      case lf.Type.STRING:
+        // order___order_id = p_col_order_id[p_i];
+        valueAssignments.push(
+          {
+            "type": "ExpressionStatement",
+            "expression": {
+              "type": "AssignmentExpression",
+              "operator": "=",
+              "left": {
                 "type": "Identifier",
-                "name": prefix + "_col_" + cd.getName()
+                "name": cd.getFullName()
               },
-              "property": {
-                "type": "Identifier",
-                "name": "get"
+              "right": {
+                "type": "MemberExpression",
+                "computed": true,
+                "object": {
+                  "type": "Identifier",
+                  "name": prefix + "_col_" + cd.getName()
+                },
+                "property": {
+                  "type": "Identifier",
+                  "name": prefix + "_i"
+                }
               }
-            },
-            "arguments": [
-              {
+            }
+          });
+        break;
+      default:
+        // order___order_id = p_col_order_id.get(p_i);
+        valueAssignments.push(
+          {
+            "type": "ExpressionStatement",
+            "expression": {
+              "type": "AssignmentExpression",
+              "operator": "=",
+              "left": {
                 "type": "Identifier",
-                "name": prefix + "_i"
+                "name": cd.getFullName()
+              },
+              "right": {
+                "type": "CallExpression",
+                "callee": {
+                  "type": "MemberExpression",
+                  "computed": false,
+                  "object": {
+                    "type": "Identifier",
+                    "name": prefix + "_col_" + cd.getName()
+                  },
+                  "property": {
+                    "type": "Identifier",
+                    "name": "get"
+                  }
+                },
+                "arguments": [
+                  {
+                    "type": "Identifier",
+                    "name": prefix + "_i"
+                  }
+                ]
               }
-            ]
-          }
-        }
-      });
+            }
+          });
+    }
   }
   // for(p_i = 0; i < p_table.size(); i++){ <valueAssignments>, <innerBody> }
   code.push(

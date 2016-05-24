@@ -111,7 +111,7 @@ lf.type.ArrayView = {
   1: undefined,   // lf.Type.BOOLEAN
   2: Float64Array,   // lf.Type.DATE_TIME
   3: Int32Array,  // lf.Type.INTEGER
-  4: undefined,   // lf.Type.NUMBER
-  5: Uint32Array,   // lf.Type.STRING
+  4: Float64Array,   // lf.Type.NUMBER
+  5: null,   // lf.Type.STRING
   6: undefined    // lf.Type.OBJECT
 };

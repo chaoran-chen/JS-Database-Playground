@@ -4,14 +4,19 @@ goog.provide('jdp.structs.Vector');
 /**
  * This is a dynamic array based on a TypedArray.
  * @param {!function} vectorType - A constructor for a TypedArray, e.g. Int32Array
+ * @param {number} [length=10] - The initial length
  * @constructor
  */
-jdp.structs.Vector = function (vectorType) {
+jdp.structs.Vector = function (vectorType, length) {
+  if(length === undefined || length < 1){
+    length = 10;
+  }
+
   /** @private {!function} */
   this.vectorType_ = vectorType;
 
   /** @private {number} - The length of the underlying ArrayBuffer. */
-  this.maxLength_ = 10;
+  this.maxLength_ = length;
 
   /** @private {!TypedArray} */
   this.typedArray_ = new vectorType(this.maxLength_);

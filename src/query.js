@@ -63,6 +63,8 @@ jdp.Query.prototype.exec = function (collectResults) {
           };
           break;
         case lf.Type.INTEGER:
+        case lf.Type.NUMBER:
+        case lf.Type.STRING:
           // order___order_id
           valueCode = {
             "type": "Identifier",

@@ -3,24 +3,23 @@ goog.provide('jdp.StoreTable');
 
 goog.require('lf.structs.map');
 goog.require('lf.type');
+goog.require('lf.Type');
 goog.require('jdp.structs.Vector');
 goog.require('jdp.utils.codeGen');
 
 jdp.Store = function () {
   /** @private {!lf.structs.Map<string, !jdp.StoreTable>} */
   this.tables_ = lf.structs.map.create();
-  
-  /** @private {} */
-  this.stringDictionary = lf.structs.map.create();
 };
 
 /**
  *
  * @param {string} name
  * @param {!lf.structs.Map<string, !jdp.ColumnDefinition> | !Array<!jdp.ColumnDefinition>} columnDefinitions
+ * @param {number} [length] - The initial length of the underlying vector.
  */
-jdp.Store.prototype.createTable = function (name, columnDefinitions) {
-  this.tables_.set(name, new jdp.StoreTable(name, columnDefinitions));
+jdp.Store.prototype.createTable = function (name, columnDefinitions, length) {
+  this.tables_.set(name, new jdp.StoreTable(name, columnDefinitions, length));
 };
 
 /**
@@ -36,9 +35,10 @@ jdp.Store.prototype.getTables = function () {
  *
  * @param {string} name
  * @param {!lf.structs.Map<string, !jdp.ColumnDefinition> | !Array<!jdp.ColumnDefinition>} columnDefinitions
+ * @param {number} [length] - The initial length of the underlying vector.
  * @constructor
  */
-jdp.StoreTable = function (name, columnDefinitions) {
+jdp.StoreTable = function (name, columnDefinitions, length) {
   /**
    * @private{string}
    */
@@ -62,13 +62,22 @@ jdp.StoreTable = function (name, columnDefinitions) {
     columnDefinitions.forEach(function (columnDefinition) {
       var name = columnDefinition.getName();
       this.columnDefinitions_.set(name, columnDefinition);
-      this.columns_.set(name, new jdp.structs.Vector(lf.type.ArrayView[columnDefinition.getType()]));
+      this.columns_.set(name, jdp.StoreTable.prototype.createStorage_(columnDefinition));
     }, this);
   } else {
     this.columnDefinitions_ = columnDefinitions;
     columnDefinitions.forEach(function (_, columnDefinition, name) {
-      this.columns_.set(name, new jdp.structs.Vector(lf.type.ArrayView[columnDefinition.getType()]));
+      this.columns_.set(name, jdp.StoreTable.prototype.createStorage_(columnDefinition));
     }, this);
+  }
+};
+
+jdp.StoreTable.prototype.createStorage_ = function (columnDefinition, length) {
+  var type = columnDefinition.getType();
+  if (type === lf.Type.STRING) {
+    return [];
+  } else {
+    return new jdp.structs.Vector(lf.type.ArrayView[type], length);
   }
 };
 
@@ -140,11 +149,19 @@ jdp.StoreTable.prototype.getInserter = function (columnNames) {
       }
     });
     if (columnNames.indexOf(cn) <= -1) {
-      valueCode = {
-        "type": "Literal",
-        "value": null,
-        "raw": "null"
-      };
+      switch (cd.getType()) {
+        case lf.Type.STRING:
+          valueCode = {
+            "type": "Literal",
+            "value": ""
+          };
+          break;
+        default:
+          valueCode = {
+            "type": "Literal",
+            "value": null
+          };
+      }
     } else {
       inserterParams.push({
         "type": "Identifier",
@@ -153,6 +170,7 @@ jdp.StoreTable.prototype.getInserter = function (columnNames) {
 
       switch (cd.getType()) {
         case lf.Type.DATE_TIME:
+          // l_shipdate.getTime()
           valueCode = {
             "type": "CallExpression",
             "callee": {
@@ -180,6 +198,9 @@ jdp.StoreTable.prototype.getInserter = function (columnNames) {
           };
           break;
         case lf.Type.INTEGER:
+        case lf.Type.NUMBER:
+        case lf.Type.STRING:
+          // o_orderid
           valueCode = {
             "type": "Identifier",
             "name": cn
@@ -189,7 +210,7 @@ jdp.StoreTable.prototype.getInserter = function (columnNames) {
           throw new Error('Type not implemented');
       }
     }
-    // col_order_id.push(order_id);
+    // col_order_id.push(<valueCode>);
     inserterBody.push({
       "type": "ExpressionStatement",
       "expression": {
@@ -290,6 +311,8 @@ jdp.StoreTable.prototype.putSync = function (objects) {
           value = obj[cd.getName()].getTime();
           break;
         case lf.Type.INTEGER:
+        case lf.Type.NUMBER:
+        case lf.Type.STRING:
           value = obj[cd.getName()];
           break;
         default:
