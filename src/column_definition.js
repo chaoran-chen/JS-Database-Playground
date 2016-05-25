@@ -65,6 +65,16 @@ jdp.ColumnDefinition.prototype.getFullName = function () {
 };
 
 /**
+ * @returns {object} An Identifier object
+ */
+jdp.ColumnDefinition.prototype.generateCode = function(){
+  return {
+    "type": "Identifier",
+    "name": this.getFullName()
+  };
+};
+
+/**
  * @returns {jdp.ColumnDefinition}
  */
 jdp.ColumnDefinition.prototype.copy = function () {

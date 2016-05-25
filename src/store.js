@@ -30,6 +30,17 @@ jdp.Store.prototype.getTables = function () {
   return this.tables_;
 };
 
+/**
+ * @returns {object} A simple schema object with schema objects of the StoreTables.
+ */
+jdp.Store.prototype.generateSchema = function(){
+  var schema = {};
+  this.tables_.forEach(function(table, name){
+    schema[name] = table.generateSchema();
+  });
+  return schema;
+};
+
 
 /**
  *
@@ -322,4 +333,15 @@ jdp.StoreTable.prototype.putSync = function (objects) {
     }
     this.length_++;
   }
+};
+
+/**
+ * @returns {object} A simple schema object with the ColumnDefinitions.
+ */
+jdp.StoreTable.prototype.generateSchema = function(){
+  var schema = {};
+  this.columnDefinitions_.forEach(function(cd, columnName){
+    schema[columnName] = cd;
+  });
+  return schema;
 };

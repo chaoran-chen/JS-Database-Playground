@@ -23,3 +23,18 @@ jdp.utils.codeGen.declaration = function(variableName){
 jdp.utils.codeGen.parse = function(code){
   return esprima.parse(code).body;
 };
+
+
+jdp.utils.codeGen.identifier = function(name){
+  return {
+    "type": "Identifier",
+    "name": name
+  };
+};
+
+jdp.utils.codeGen.literal = function(value){
+  return {
+    "type": "Literal",
+    "value": value
+  };
+};

@@ -9,22 +9,18 @@ goog.require('jdp.utils.codeGen');
  * @implements {jdp.proc.Step}
  * @param {!jdp.proc.Step} childStepLeft
  * @param {!jdp.proc.Step} childStepRight
- * @param {!jdp.ColumnDefinition} leftKey
- * @param {!jdp.ColumnDefinition} rightKey
+ * @param {!Array<{left: jdp.ColumnDefinition, right: jdp.ColumnDefinition}>} joinColumns
  * @constructor
  */
-jdp.proc.EquiJoinStep = function (childStepLeft, childStepRight, leftKey, rightKey) {
+jdp.proc.EquiJoinStep = function (childStepLeft, childStepRight, joinColumns) {
   /** @private {!jdp.proc.Step} */
   this.childStepLeft_ = childStepLeft;
 
   /** @private {!jdp.proc.Step} */
   this.childStepRight_ = childStepRight;
 
-  /** @private {!jdp.ColumnDefinition} */
-  this.leftKey_ = leftKey;
-
-  /** @private {!jdp.ColumnDefinition} */
-  this.rightKey_ = rightKey;
+  /** @private {!Array<{left: jdp.ColumnDefinition, right: jdp.ColumnDefinition}>} keyPairs */
+  this.joinColumns_ = joinColumns;
 };
 
 
@@ -43,13 +39,17 @@ jdp.proc.EquiJoinStep.prototype.generateCode = function (prefix) {
     pLeftTuple = prefix + '_leftTuple',
     leftTupleProperties = [],
     i,
-    cd;
+    cd,
+    kp,
+    first,
+    keyLeft, keyRight, keyLeftCode, keyRightCode;
   fl = this.childStepLeft_.generateCode(prefix + 'l');
   fr = this.childStepRight_.generateCode(prefix + 'r');
   code = fl.code;
   declarations = fl.declarations.concat(fr.declarations);
   declarations.push(
-    jdp.utils.codeGen.declaration(pMap)
+    jdp.utils.codeGen.declaration(pMap),
+    jdp.utils.codeGen.declaration(pLeftTuple)
   );
   code.unshift(
     jdp.utils.codeGen.parse(pMap + ' = lf.structs.map.create();')[0]
@@ -73,7 +73,23 @@ jdp.proc.EquiJoinStep.prototype.generateCode = function (prefix) {
       "shorthand": false
     });
   }
-  // p_map.set(order___order_id, { [...] });
+  keyLeft = '';
+  keyRight = '';
+  first = true;
+  for (i = 0; i < this.joinColumns_.length; i++) {
+    kp = this.joinColumns_[i];
+    if (first) {
+      keyLeft += '"" +' + kp.left.getFullName();
+      keyRight += '"" +' + kp.right.getFullName();
+      first = false;
+    } else {
+      keyLeft += '+ "+++" + ' + kp.left.getFullName();
+      keyRight += '+ "+++" + ' + kp.right.getFullName();
+    }
+  }
+  keyLeftCode = jdp.utils.codeGen.parse(keyLeft)[0].expression;
+  keyRightCode = jdp.utils.codeGen.parse(keyRight)[0].expression;
+  // p_map.set(order___order_id + '+++' + order___cust_id, { [...] });
   fl.innerBody.push(
     {
       "type": "ExpressionStatement",
@@ -92,10 +108,7 @@ jdp.proc.EquiJoinStep.prototype.generateCode = function (prefix) {
           }
         },
         "arguments": [
-          {
-            "type": "Identifier",
-            "name": this.leftKey_.getFullName()
-          },
+          keyLeftCode,
           {
             "type": "ObjectExpression",
             "properties": leftTupleProperties
@@ -105,7 +118,7 @@ jdp.proc.EquiJoinStep.prototype.generateCode = function (prefix) {
     }
   );
   code = code.concat(fr.code);
-  // p_leftTuple = p_map.get(customer___cust_id);
+  // p_leftTuple = p_map.get(order2___order_id + '+++' + order2___cust_id);
   fr.innerBody.push(
     {
       "type": "ExpressionStatement",
@@ -130,12 +143,7 @@ jdp.proc.EquiJoinStep.prototype.generateCode = function (prefix) {
               "name": "get"
             }
           },
-          "arguments": [
-            {
-              "type": "Identifier",
-              "name": this.rightKey_.getFullName()
-            }
-          ]
+          "arguments": [keyRightCode]
         }
       }
     }

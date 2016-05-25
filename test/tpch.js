@@ -31,88 +31,88 @@ jdp.Tpch_ = function (scale) {
 
 jdp.Tpch_.prototype.buildSchema_ = function () {
   this.store.createTable('nation', [
-    new jdp.ColumnDefinition('n_nationkey', lf.Type.INTEGER),
-    new jdp.ColumnDefinition('n_name', lf.Type.STRING),
-    new jdp.ColumnDefinition('n_regionkey', lf.Type.INTEGER),
-    new jdp.ColumnDefinition('n_comment', lf.Type.STRING)
+    new jdp.ColumnDefinition('n_nationkey', lf.Type.INTEGER, undefined, 'nation'),
+    new jdp.ColumnDefinition('n_name', lf.Type.STRING, undefined, 'nation'),
+    new jdp.ColumnDefinition('n_regionkey', lf.Type.INTEGER, undefined, 'nation'),
+    new jdp.ColumnDefinition('n_comment', lf.Type.STRING, undefined, 'nation')
   ], jdp.tpch.getTableLength('nation', this.scale_));
 
   this.store.createTable('region', [
-    new jdp.ColumnDefinition('r_regionkey', lf.Type.INTEGER),
-    new jdp.ColumnDefinition('r_name', lf.Type.STRING),
-    new jdp.ColumnDefinition('r_comment', lf.Type.STRING)
+    new jdp.ColumnDefinition('r_regionkey', lf.Type.INTEGER, undefined, 'region'),
+    new jdp.ColumnDefinition('r_name', lf.Type.STRING, undefined, 'region'),
+    new jdp.ColumnDefinition('r_comment', lf.Type.STRING, undefined, 'region')
   ], jdp.tpch.getTableLength('region', this.scale_));
 
   this.store.createTable('part', [
-    new jdp.ColumnDefinition('p_partkey', lf.Type.INTEGER),
-    new jdp.ColumnDefinition('p_name', lf.Type.STRING),
-    new jdp.ColumnDefinition('p_mfgr', lf.Type.STRING),
-    new jdp.ColumnDefinition('p_brand', lf.Type.STRING),
-    new jdp.ColumnDefinition('p_type', lf.Type.STRING),
-    new jdp.ColumnDefinition('p_size', lf.Type.INTEGER),
-    new jdp.ColumnDefinition('p_container', lf.Type.STRING),
-    new jdp.ColumnDefinition('p_retailprice', lf.Type.NUMBER),
-    new jdp.ColumnDefinition('p_comment', lf.Type.STRING)
+    new jdp.ColumnDefinition('p_partkey', lf.Type.INTEGER, undefined, 'part'),
+    new jdp.ColumnDefinition('p_name', lf.Type.STRING, undefined, 'part'),
+    new jdp.ColumnDefinition('p_mfgr', lf.Type.STRING, undefined, 'part'),
+    new jdp.ColumnDefinition('p_brand', lf.Type.STRING, undefined, 'part'),
+    new jdp.ColumnDefinition('p_type', lf.Type.STRING, undefined, 'part'),
+    new jdp.ColumnDefinition('p_size', lf.Type.INTEGER, undefined, 'part'),
+    new jdp.ColumnDefinition('p_container', lf.Type.STRING, undefined, 'part'),
+    new jdp.ColumnDefinition('p_retailprice', lf.Type.NUMBER, undefined, 'part'),
+    new jdp.ColumnDefinition('p_comment', lf.Type.STRING, undefined, 'part')
   ], 1000 + jdp.tpch.getTableLength('part', this.scale_));
 
   this.store.createTable('supplier', [
-    new jdp.ColumnDefinition('s_suppkey', lf.Type.INTEGER),
-    new jdp.ColumnDefinition('s_name', lf.Type.STRING),
-    new jdp.ColumnDefinition('s_address', lf.Type.STRING),
-    new jdp.ColumnDefinition('s_nationkey', lf.Type.INTEGER),
-    new jdp.ColumnDefinition('s_phone', lf.Type.STRING),
-    new jdp.ColumnDefinition('s_acctbal', lf.Type.NUMBER),
-    new jdp.ColumnDefinition('s_comment', lf.Type.STRING)
+    new jdp.ColumnDefinition('s_suppkey', lf.Type.INTEGER, undefined, 'supplier'),
+    new jdp.ColumnDefinition('s_name', lf.Type.STRING, undefined, 'supplier'),
+    new jdp.ColumnDefinition('s_address', lf.Type.STRING, undefined, 'supplier'),
+    new jdp.ColumnDefinition('s_nationkey', lf.Type.INTEGER, undefined, 'supplier'),
+    new jdp.ColumnDefinition('s_phone', lf.Type.STRING, undefined, 'supplier'),
+    new jdp.ColumnDefinition('s_acctbal', lf.Type.NUMBER, undefined, 'supplier'),
+    new jdp.ColumnDefinition('s_comment', lf.Type.STRING, undefined, 'supplier')
   ], 1000 + jdp.tpch.getTableLength('supplier', this.scale_));
 
   this.store.createTable('partsupp', [
-    new jdp.ColumnDefinition('ps_partkey', lf.Type.INTEGER),
-    new jdp.ColumnDefinition('ps_suppkey', lf.Type.INTEGER),
-    new jdp.ColumnDefinition('ps_availqty', lf.Type.INTEGER),
-    new jdp.ColumnDefinition('ps_supplycost', lf.Type.NUMBER),
-    new jdp.ColumnDefinition('ps_comment', lf.Type.STRING)
+    new jdp.ColumnDefinition('ps_partkey', lf.Type.INTEGER, undefined, 'partsupp'),
+    new jdp.ColumnDefinition('ps_suppkey', lf.Type.INTEGER, undefined, 'partsupp'),
+    new jdp.ColumnDefinition('ps_availqty', lf.Type.INTEGER, undefined, 'partsupp'),
+    new jdp.ColumnDefinition('ps_supplycost', lf.Type.NUMBER, undefined, 'partsupp'),
+    new jdp.ColumnDefinition('ps_comment', lf.Type.STRING, undefined, 'partsupp')
   ], 1000 + jdp.tpch.getTableLength('partsupp', this.scale_));
 
   this.store.createTable('customer', [
-    new jdp.ColumnDefinition('c_custkey', lf.Type.INTEGER),
-    new jdp.ColumnDefinition('c_name', lf.Type.STRING),
-    new jdp.ColumnDefinition('c_address', lf.Type.STRING),
-    new jdp.ColumnDefinition('c_nationkey', lf.Type.INTEGER),
-    new jdp.ColumnDefinition('c_phone', lf.Type.STRING),
-    new jdp.ColumnDefinition('c_acctbal', lf.Type.NUMBER),
-    new jdp.ColumnDefinition('c_mktsegment', lf.Type.STRING),
-    new jdp.ColumnDefinition('c_comment', lf.Type.STRING)
+    new jdp.ColumnDefinition('c_custkey', lf.Type.INTEGER, undefined, 'customer'),
+    new jdp.ColumnDefinition('c_name', lf.Type.STRING, undefined, 'customer'),
+    new jdp.ColumnDefinition('c_address', lf.Type.STRING, undefined, 'customer'),
+    new jdp.ColumnDefinition('c_nationkey', lf.Type.INTEGER, undefined, 'customer'),
+    new jdp.ColumnDefinition('c_phone', lf.Type.STRING, undefined, 'customer'),
+    new jdp.ColumnDefinition('c_acctbal', lf.Type.NUMBER, undefined, 'customer'),
+    new jdp.ColumnDefinition('c_mktsegment', lf.Type.STRING, undefined, 'customer'),
+    new jdp.ColumnDefinition('c_comment', lf.Type.STRING, undefined, 'customer')
   ], 1000 + jdp.tpch.getTableLength('customer', this.scale_));
 
   this.store.createTable('orders', [
-    new jdp.ColumnDefinition('o_orderkey', lf.Type.INTEGER),
-    new jdp.ColumnDefinition('o_custkey', lf.Type.INTEGER),
-    new jdp.ColumnDefinition('o_orderstatus', lf.Type.STRING),
-    new jdp.ColumnDefinition('o_totalprice', lf.Type.NUMBER),
-    new jdp.ColumnDefinition('o_orderdate', lf.Type.DATE_TIME),
-    new jdp.ColumnDefinition('o_orderpriority', lf.Type.STRING),
-    new jdp.ColumnDefinition('o_clerk', lf.Type.STRING),
-    new jdp.ColumnDefinition('o_shippriority', lf.Type.INTEGER),
-    new jdp.ColumnDefinition('o_comment', lf.Type.STRING)
+    new jdp.ColumnDefinition('o_orderkey', lf.Type.INTEGER, undefined, 'orders'),
+    new jdp.ColumnDefinition('o_custkey', lf.Type.INTEGER, undefined, 'orders'),
+    new jdp.ColumnDefinition('o_orderstatus', lf.Type.STRING, undefined, 'orders'),
+    new jdp.ColumnDefinition('o_totalprice', lf.Type.NUMBER, undefined, 'orders'),
+    new jdp.ColumnDefinition('o_orderdate', lf.Type.DATE_TIME, undefined, 'orders'),
+    new jdp.ColumnDefinition('o_orderpriority', lf.Type.STRING, undefined, 'orders'),
+    new jdp.ColumnDefinition('o_clerk', lf.Type.STRING, undefined, 'orders'),
+    new jdp.ColumnDefinition('o_shippriority', lf.Type.INTEGER, undefined, 'orders'),
+    new jdp.ColumnDefinition('o_comment', lf.Type.STRING, undefined, 'orders')
   ], 1000 + jdp.tpch.getTableLength('orders', this.scale_));
 
   this.store.createTable('lineitem', [
-    new jdp.ColumnDefinition('l_orderkey', lf.Type.INTEGER),
-    new jdp.ColumnDefinition('l_partkey', lf.Type.INTEGER),
-    new jdp.ColumnDefinition('l_suppkey', lf.Type.INTEGER),
-    new jdp.ColumnDefinition('l_linenumber', lf.Type.INTEGER),
-    new jdp.ColumnDefinition('l_quantity', lf.Type.NUMBER),
-    new jdp.ColumnDefinition('l_extendedprice', lf.Type.NUMBER),
-    new jdp.ColumnDefinition('l_discount', lf.Type.NUMBER),
-    new jdp.ColumnDefinition('l_tax', lf.Type.NUMBER),
-    new jdp.ColumnDefinition('l_returnflag', lf.Type.STRING),
-    new jdp.ColumnDefinition('l_linestatus', lf.Type.STRING),
-    new jdp.ColumnDefinition('l_shipdate', lf.Type.DATE_TIME),
-    new jdp.ColumnDefinition('l_commitdate', lf.Type.DATE_TIME),
-    new jdp.ColumnDefinition('l_receiptdate', lf.Type.DATE_TIME),
-    new jdp.ColumnDefinition('l_shipinstruct', lf.Type.STRING),
-    new jdp.ColumnDefinition('l_shipmode', lf.Type.STRING),
-    new jdp.ColumnDefinition('l_comment', lf.Type.STRING)
+    new jdp.ColumnDefinition('l_orderkey', lf.Type.INTEGER, undefined, 'lineitem'),
+    new jdp.ColumnDefinition('l_partkey', lf.Type.INTEGER, undefined, 'lineitem'),
+    new jdp.ColumnDefinition('l_suppkey', lf.Type.INTEGER, undefined, 'lineitem'),
+    new jdp.ColumnDefinition('l_linenumber', lf.Type.INTEGER, undefined, 'lineitem'),
+    new jdp.ColumnDefinition('l_quantity', lf.Type.NUMBER, undefined, 'lineitem'),
+    new jdp.ColumnDefinition('l_extendedprice', lf.Type.NUMBER, undefined, 'lineitem'),
+    new jdp.ColumnDefinition('l_discount', lf.Type.NUMBER, undefined, 'lineitem'),
+    new jdp.ColumnDefinition('l_tax', lf.Type.NUMBER, undefined, 'lineitem'),
+    new jdp.ColumnDefinition('l_returnflag', lf.Type.STRING, undefined, 'lineitem'),
+    new jdp.ColumnDefinition('l_linestatus', lf.Type.STRING, undefined, 'lineitem'),
+    new jdp.ColumnDefinition('l_shipdate', lf.Type.DATE_TIME, undefined, 'lineitem'),
+    new jdp.ColumnDefinition('l_commitdate', lf.Type.DATE_TIME, undefined, 'lineitem'),
+    new jdp.ColumnDefinition('l_receiptdate', lf.Type.DATE_TIME, undefined, 'lineitem'),
+    new jdp.ColumnDefinition('l_shipinstruct', lf.Type.STRING, undefined, 'lineitem'),
+    new jdp.ColumnDefinition('l_shipmode', lf.Type.STRING, undefined, 'lineitem'),
+    new jdp.ColumnDefinition('l_comment', lf.Type.STRING, undefined, 'lineitem')
   ], 1000 + jdp.tpch.getTableLength('lineitem', this.scale_));
 };
 

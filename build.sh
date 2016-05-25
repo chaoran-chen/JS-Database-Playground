@@ -8,8 +8,8 @@
     --output_mode=compiled \
     --compiler_jar=node_modules/google-closure-compiler/compiler.jar \
     --compiler_flags="--source_map_format=V3" \
-    --compiler_flags="--create_source_map=js-db-playground.js.map" \
-    --compiler_flags="--js_output_file=js-db-playground.js" \
+    --compiler_flags="--create_source_map=dist/js-db-playground.js.map" \
+    --compiler_flags="--js_output_file=dist/js-db-playground.js" \
     --compiler_flags="--compilation_level=SIMPLE_OPTIMIZATIONS"
 
-echo "//# sourceMappingURL=js-db-playground.js.map" >> js-db-playground.js
+echo "//# sourceMappingURL=js-db-playground.js.map" >> dist/js-db-playground.js

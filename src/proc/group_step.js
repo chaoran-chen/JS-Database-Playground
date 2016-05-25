@@ -1,8 +1,9 @@
 goog.provide('jdp.proc.GroupStep');
-goog.provide('jdp.proc.CountAggregation');
-goog.provide('jdp.proc.SumAggregation');
 
 goog.require('jdp.proc.Step');
+goog.require('jdp.proc.CountAggregation');
+goog.require('jdp.proc.SumAggregation');
+goog.require('jdp.proc.AvgAggregation');
 goog.require('jdp.ColumnDefinition');
 goog.require('lf.Type');
 
@@ -40,7 +41,7 @@ jdp.proc.GroupStep.prototype.generateCode = function (prefix) {
     first = true,
     groupKey,
     agg,
-    pGroupAggCode,
+    pGroupCode,
     pMap = prefix + '_map',
     pGroupKey = prefix + '_key',
     pGroup = prefix + '_group',
@@ -60,17 +61,24 @@ jdp.proc.GroupStep.prototype.generateCode = function (prefix) {
   code.unshift(
     jdp.utils.codeGen.parse(pMap + ' = lf.structs.map.create();')[0]
   );
-  groupKey = '';
-  for (i = 0; i < this.columnDefinitions_.length; i++) {
-    cd = this.columnDefinitions_[i];
-    if (first) {
-      groupKey += '"" +' + cd.getFullName();
-    } else {
-      groupKey += '+ "+++" + ' + cd.getFullName();
+  if(this.columnDefinitions_.length > 0){
+    groupKey = '';
+    for (i = 0; i < this.columnDefinitions_.length; i++) {
+      cd = this.columnDefinitions_[i];
+      if (first) {
+        groupKey += '"" +' + cd.getFullName();
+        first = false;
+      } else {
+        groupKey += '+ "+++" + ' + cd.getFullName();
+      }
     }
+    // p_groupKey = order___order_id + '+++' + order___cust_id;
+    f.innerBody.push(jdp.utils.codeGen.parse(pGroupKey + '=' + groupKey + ';')[0]);
+  } else {
+    // p_groupKey = 'ONLY_GROUP';
+    f.innerBody.push(jdp.utils.codeGen.parse(pGroupKey + '= "ONLY_GROUP";')[0]);
   }
-  // p_groupKey = order___order_id + '+++' + order___cust_id;
-  f.innerBody.push(jdp.utils.codeGen.parse(pGroupKey + '=' + groupKey + ';')[0]);
+
   // if(!p_map.get(p_groupKey)){p_map.set(p_groupKey, {});}
   f.innerBody.push(
     {
@@ -172,65 +180,14 @@ jdp.proc.GroupStep.prototype.generateCode = function (prefix) {
       }
     }
   );
-  // if(!p_group.count){ [...] } else { [...} }
+  // <generateProcessingCode()>
   for (i = 0; i < this.aggregations_.length; i++) {
     agg = this.aggregations_[i];
-    pGroupAggCode = {
-      "type": "MemberExpression",
-      "computed": false,
-      "object": {
-        "type": "Identifier",
-        "name": pGroup
-      },
-      "property": {
-        "type": "Identifier",
-        "name": agg.alias_
-      }
+    pGroupCode = {
+      "type": "Identifier",
+      "name": pGroup
     };
-    f.innerBody.push(
-      {
-        "type": "IfStatement",
-        "test": {
-          "type": "BinaryExpression",
-          "operator": "!==",
-          "left": pGroupAggCode,
-          "right": {
-            "type": "Identifier",
-            "name": "undefined"
-          }
-        },
-        "consequent": {
-          "type": "BlockStatement",
-          "body": [
-            {
-              "type": "ExpressionStatement",
-              "expression": {
-                "type": "AssignmentExpression",
-                "operator": "=",
-                "left": pGroupAggCode,
-                "right": agg.generateAddCode(pGroupAggCode)
-              }
-            }
-          ]
-        },
-        "alternate": {
-          "type": "BlockStatement",
-          "body": [
-            {
-              "type": "ExpressionStatement",
-              "expression": {
-                "type": "AssignmentExpression",
-                "operator": "=",
-                "left": pGroupAggCode,
-                "right": agg.generateFirstCode(pGroupAggCode)
-              }
-            }
-          ]
-        }
-      }
-    );
-    columnDefinitions.push(new jdp.ColumnDefinition(this.aggregations_[i].alias_, lf.Type.INTEGER));
-    declarations.push(jdp.utils.codeGen.declaration(this.aggregations_[i].alias_));
+    f.innerBody.push(agg.generateProcessingCode(pGroupCode));
   }
   //p_map.forEach(function(value, key){ <innerBody> }, this);
   code.push(
@@ -279,45 +236,8 @@ jdp.proc.GroupStep.prototype.generateCode = function (prefix) {
       }
     }
   );
-  // p_values = key.split('+++');
-  innerBody.push(
-    {
-      "type": "ExpressionStatement",
-      "expression": {
-        "type": "AssignmentExpression",
-        "operator": "=",
-        "left": {
-          "type": "Identifier",
-          "name": "p_values"
-        },
-        "right": {
-          "type": "CallExpression",
-          "callee": {
-            "type": "MemberExpression",
-            "computed": false,
-            "object": {
-              "type": "Identifier",
-              "name": "key"
-            },
-            "property": {
-              "type": "Identifier",
-              "name": "split"
-            }
-          },
-          "arguments": [
-            {
-              "type": "Literal",
-              "value": "+++",
-              "raw": "'+++'"
-            }
-          ]
-        }
-      }
-    }
-  );
-  // order___order_id = p_values[0];
-  for (i = 0; i < this.columnDefinitions_.length; i++) {
-    cd = this.columnDefinitions_[i];
+  if(this.columnDefinitions_.length > 0){
+    // p_values = key.split('+++');
     innerBody.push(
       {
         "type": "ExpressionStatement",
@@ -326,25 +246,107 @@ jdp.proc.GroupStep.prototype.generateCode = function (prefix) {
           "operator": "=",
           "left": {
             "type": "Identifier",
-            "name": cd.getFullName()
+            "name": "p_values"
           },
           "right": {
-            "type": "MemberExpression",
-            "computed": true,
-            "object": {
-              "type": "Identifier",
-              "name": pValues
+            "type": "CallExpression",
+            "callee": {
+              "type": "MemberExpression",
+              "computed": false,
+              "object": {
+                "type": "Identifier",
+                "name": "key"
+              },
+              "property": {
+                "type": "Identifier",
+                "name": "split"
+              }
             },
-            "property": {
-              "type": "Literal",
-              "value": i
-            }
+            "arguments": [
+              {
+                "type": "Literal",
+                "value": "+++",
+                "raw": "'+++'"
+              }
+            ]
           }
         }
       }
     );
+
+    for (i = 0; i < this.columnDefinitions_.length; i++) {
+      cd = this.columnDefinitions_[i];
+      switch (cd.getType()) {
+        case lf.Type.DATE_TIME:
+        case lf.Type.INTEGER:
+        case lf.Type.NUMBER:
+          // order___order_id = parseFloat(p_values[0]);
+          innerBody.push(
+            {
+              "type": "ExpressionStatement",
+              "expression": {
+                "type": "AssignmentExpression",
+                "operator": "=",
+                "left": {
+                  "type": "Identifier",
+                  "name": cd.getFullName()
+                },
+                "right": {
+                  "type": "CallExpression",
+                  "callee": {
+                    "type": "Identifier",
+                    "name": "parseFloat"
+                  },
+                  "arguments": [
+                    {
+                      "type": "MemberExpression",
+                      "computed": true,
+                      "object": {
+                        "type": "Identifier",
+                        "name": pValues
+                      },
+                      "property": {
+                        "type": "Literal",
+                        "value": i
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          );
+          break;
+        default:
+          // order___order_id = p_values[0];
+          innerBody.push(
+            {
+              "type": "ExpressionStatement",
+              "expression": {
+                "type": "AssignmentExpression",
+                "operator": "=",
+                "left": {
+                  "type": "Identifier",
+                  "name": cd.getFullName()
+                },
+                "right": {
+                  "type": "MemberExpression",
+                  "computed": true,
+                  "object": {
+                    "type": "Identifier",
+                    "name": pValues
+                  },
+                  "property": {
+                    "type": "Literal",
+                    "value": i
+                  }
+                }
+              }
+            }
+          );
+      }
+    }
   }
-  // count = value.count;
+  // count = value.count; | count = value.avg__sum/value.avg__count;
   for (i = 0; i < this.aggregations_.length; i++) {
     agg = this.aggregations_[i];
     innerBody.push(
@@ -357,81 +359,12 @@ jdp.proc.GroupStep.prototype.generateCode = function (prefix) {
             "type": "Identifier",
             "name": agg.alias_
           },
-          "right": {
-            "type": "MemberExpression",
-            "computed": false,
-            "object": {
-              "type": "Identifier",
-              "name": "value"
-            },
-            "property": {
-              "type": "Identifier",
-              "name": agg.alias_
-            }
-          }
+          "right": agg.generateGetResultCode()
         }
       }
     );
+    columnDefinitions.push(new jdp.ColumnDefinition(this.aggregations_[i].alias_, lf.Type.NUMBER));
+    declarations.push(jdp.utils.codeGen.declaration(this.aggregations_[i].alias_));
   }
   return new jdp.proc.StepCodeFragment(code, innerBody, declarations, columnDefinitions);
-};
-
-/**
- *
- * @param {string} alias
- * @constructor
- */
-jdp.proc.CountAggregation = function (alias) {
-  this.alias_ = alias;
-};
-
-jdp.proc.CountAggregation.prototype.generateFirstCode = function (pGroupAggCode) {
-  return {
-    "type": "Literal",
-    "value": 1,
-    "raw": "1"
-  };
-};
-
-jdp.proc.CountAggregation.prototype.generateAddCode = function (pGroupAggCode) {
-  return {
-    "type": "BinaryExpression",
-    "operator": "+",
-    "left": pGroupAggCode,
-    "right": {
-      "type": "Literal",
-      "value": 1,
-      "raw": "1"
-    }
-  };
-};
-
-/**
- *
- * @param {string} alias
- * @param {jdp.ColumnDefinition} columnDefinition
- * @constructor
- */
-jdp.proc.SumAggregation = function (alias, columnDefinition) {
-  this.alias_ = alias;
-  this.columnDefinition_ = columnDefinition;
-};
-
-jdp.proc.SumAggregation.prototype.generateFirstCode = function (pGroupAggCode) {
-  return {
-    "type": "Identifier",
-    "name": this.columnDefinition_.getFullName()
-  };
-};
-
-jdp.proc.SumAggregation.prototype.generateAddCode = function (pGroupAggCode) {
-  return {
-    "type": "BinaryExpression",
-    "operator": "+",
-    "left": pGroupAggCode,
-    "right": {
-      "type": "Identifier",
-      "name": this.columnDefinition_.getFullName()
-    }
-  };
 };
