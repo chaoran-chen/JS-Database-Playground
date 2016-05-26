@@ -77,7 +77,7 @@ jdp.proc.SumAggregation.prototype.generateProcessingCode = function (groupCode) 
 };
 
 /** @override */
-jdp.proc.SumAggregation.prototype.generateGetResultCode = function () {
-  // value.sum
-  return jdp.utils.codeGen.parse('value.' + this.alias_)[0].expression;
+jdp.proc.SumAggregation.prototype.generateGetResultCode = function (value) {
+  // p_tuple.sum
+  return jdp.utils.codeGen.parse(value + '.' + this.alias_)[0].expression;
 };

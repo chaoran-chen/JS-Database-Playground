@@ -13,7 +13,8 @@ jdp.proc.Aggregation.prototype.generateProcessingCode = function (groupCode) {
 };
 
 /**
+ * @param {string} value - Identifier of the aggregation value object.
  * @return A Statement
  */
-jdp.proc.Aggregation.prototype.generateGetResultCode = function () {
+jdp.proc.Aggregation.prototype.generateGetResultCode = function (value) {
 };

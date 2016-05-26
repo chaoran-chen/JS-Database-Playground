@@ -43,6 +43,10 @@ jdp.proc.GroupStep.prototype.generateCode = function (prefix) {
     agg,
     pGroupCode,
     pMap = prefix + '_map',
+    pMapIter = prefix + '_iter',
+    pTuple = prefix + '_tuple',
+    pTupleKey = prefix + '_tupleKey',
+    pTupleValue = prefix + '_tupleValue',
     pGroupKey = prefix + '_key',
     pGroup = prefix + '_group',
     pI = prefix + '_i',
@@ -56,7 +60,11 @@ jdp.proc.GroupStep.prototype.generateCode = function (prefix) {
     jdp.utils.codeGen.declaration(pGroupKey),
     jdp.utils.codeGen.declaration(pGroup),
     jdp.utils.codeGen.declaration(pI),
-    jdp.utils.codeGen.declaration(pValues)
+    jdp.utils.codeGen.declaration(pValues),
+    jdp.utils.codeGen.declaration(pMapIter),
+    jdp.utils.codeGen.declaration(pTuple),
+    jdp.utils.codeGen.declaration(pTupleKey),
+    jdp.utils.codeGen.declaration(pTupleValue)
   );
   code.unshift(
     jdp.utils.codeGen.parse(pMap + ' = lf.structs.map.create();')[0]
@@ -189,50 +197,132 @@ jdp.proc.GroupStep.prototype.generateCode = function (prefix) {
     };
     f.innerBody.push(agg.generateProcessingCode(pGroupCode));
   }
-  //p_map.forEach(function(value, key){ <innerBody> }, this);
+  // p_mapIter = p_map.entries();
   code.push(
     {
       "type": "ExpressionStatement",
       "expression": {
-        "type": "CallExpression",
-        "callee": {
-          "type": "MemberExpression",
-          "computed": false,
-          "object": {
-            "type": "Identifier",
-            "name": pMap
+        "type": "AssignmentExpression",
+        "operator": "=",
+        "left": {
+          "type": "Identifier",
+          "name": pMapIter
+        },
+        "right": {
+          "type": "CallExpression",
+          "callee": {
+            "type": "MemberExpression",
+            "computed": false,
+            "object": {
+              "type": "Identifier",
+              "name": pMap
+            },
+            "property": {
+              "type": "Identifier",
+              "name": "entries"
+            }
           },
-          "property": {
+          "arguments": []
+        }
+      }
+    }
+  );
+  // while((p_tuple=p_mapIter.next().value) !== undefined){ <innerBody> }
+  code.push(
+    {
+      "type": "WhileStatement",
+      "test": {
+        "type": "BinaryExpression",
+        "operator": "!==",
+        "left": {
+          "type": "AssignmentExpression",
+          "operator": "=",
+          "left": {
             "type": "Identifier",
-            "name": "forEach"
+            "name": pTuple
+          },
+          "right": {
+            "type": "MemberExpression",
+            "computed": false,
+            "object": {
+              "type": "CallExpression",
+              "callee": {
+                "type": "MemberExpression",
+                "computed": false,
+                "object": {
+                  "type": "Identifier",
+                  "name": pMapIter
+                },
+                "property": {
+                  "type": "Identifier",
+                  "name": "next"
+                }
+              },
+              "arguments": []
+            },
+            "property": {
+              "type": "Identifier",
+              "name": "value"
+            }
           }
         },
-        "arguments": [
-          {
-            "type": "FunctionExpression",
-            "id": null,
-            "params": [
-              {
-                "type": "Identifier",
-                "name": "value"
-              },
-              {
-                "type": "Identifier",
-                "name": "key"
-              }
-            ],
-            "defaults": [],
-            "body": {
-              "type": "BlockStatement",
-              "body": innerBody
-            },
-            "generator": false,
-            "expression": false
+        "right": {
+          "type": "Identifier",
+          "name": "undefined"
+        }
+      },
+      "body": {
+        "type": "BlockStatement",
+        "body": innerBody
+      }
+    }
+  );
+  // p_tupleKey = p_tuple[0]; p_tupleValue = p_tuple[1];
+  innerBody.push(
+    {
+      "type": "ExpressionStatement",
+      "expression": {
+        "type": "AssignmentExpression",
+        "operator": "=",
+        "left": {
+          "type": "Identifier",
+          "name": pTupleKey
+        },
+        "right": {
+          "type": "MemberExpression",
+          "computed": true,
+          "object": {
+            "type": "Identifier",
+            "name": pTuple
           },
-          {
-            "type": "ThisExpression"
+          "property": {
+            "type": "Literal",
+            "value": 0
           }
-        ]
+        }
+      }
+    },
+    {
+      "type": "ExpressionStatement",
+      "expression": {
+        "type": "AssignmentExpression",
+        "operator": "=",
+        "left": {
+          "type": "Identifier",
+          "name": pTupleValue
+        },
+        "right": {
+          "type": "MemberExpression",
+          "computed": true,
+          "object": {
+            "type": "Identifier",
+            "name": pTuple
+          },
+          "property": {
+            "type": "Literal",
+            "value": 1
+          }
+        }
       }
     }
   );
@@ -246,7 +336,7 @@ jdp.proc.GroupStep.prototype.generateCode = function (prefix) {
           "operator": "=",
           "left": {
             "type": "Identifier",
-            "name": "p_values"
+            "name": pValues
           },
           "right": {
             "type": "CallExpression",
@@ -255,7 +345,7 @@ jdp.proc.GroupStep.prototype.generateCode = function (prefix) {
               "computed": false,
               "object": {
                 "type": "Identifier",
-                "name": "key"
+                "name": pTupleKey
               },
               "property": {
                 "type": "Identifier",
@@ -265,8 +355,7 @@ jdp.proc.GroupStep.prototype.generateCode = function (prefix) {
             "arguments": [
               {
                 "type": "Literal",
-                "value": "+++",
-                "raw": "'+++'"
+                "value": "+++"
               }
             ]
           }
@@ -359,7 +448,7 @@ jdp.proc.GroupStep.prototype.generateCode = function (prefix) {
             "type": "Identifier",
             "name": agg.alias_
           },
-          "right": agg.generateGetResultCode()
+          "right": agg.generateGetResultCode(pTupleValue)
         }
       }
     );

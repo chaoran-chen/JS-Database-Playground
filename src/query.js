@@ -18,10 +18,11 @@ jdp.Query = function (store, step) {
 };
 
 /**
- *
- * @param {boolean} [collectResults=true] - if the results should be collected.
+ * @param {object} [options]
+ * @param {boolean} [options.collectResults=true] - if the results should be collected.
+ * @param {number} [options.limit=0]
  */
-jdp.Query.prototype.exec = function (collectResults) {
+jdp.Query.prototype.exec = function (options) {
   if (this.executed_) {
     throw new Error('Query was already executed.');
   } else {
@@ -35,14 +36,18 @@ jdp.Query.prototype.exec = function (collectResults) {
     cd,
     valueCode,
     resultProperties = [],
-    f;
-  if (collectResults === undefined) {
-    collectResults = true;
-  }
+    f,
+    defaultOpts,
+    opts = {};
+  defaultOpts = {
+    collectResults: true,
+    limit: 0
+  };
+  goog.object.extend(opts, defaultOpts, options || {});
   generationStartTime = new Date();
   f = this.step.generateCode('p');
   f.declarations.push(jdp.utils.codeGen.declaration('value'));
-  if (collectResults) {
+  if (opts.collectResults) {
     for (var i = 0; i < f.columnDefinitions.length; i++) {
       cd = f.columnDefinitions[i];
       switch (cd.getType()) {
@@ -126,10 +131,71 @@ jdp.Query.prototype.exec = function (collectResults) {
       }
     );
   }
+  if(opts.limit){
+    f.declarations.push(jdp.utils.codeGen.declaration('numberResults'));
+    // numberResults = 0:
+    f.code.unshift(
+      {
+        "type": "ExpressionStatement",
+        "expression": {
+          "type": "AssignmentExpression",
+          "operator": "=",
+          "left": {
+            "type": "Identifier",
+            "name": "numberResults"
+          },
+          "right": {
+            "type": "Literal",
+            "value": 0,
+          }
+        }
+      }
+    );
+    // if (numberResults >= 10) { return; }
+    f.innerBody.push(
+      {
+        "type": "ExpressionStatement",
+        "expression": {
+          "type": "UpdateExpression",
+          "operator": "++",
+          "argument": {
+            "type": "Identifier",
+            "name": "numberResults"
+          },
+          "prefix": false
+        }
+      },
+      {
+        "type": "IfStatement",
+        "test": {
+          "type": "BinaryExpression",
+          "operator": ">=",
+          "left": {
+            "type": "Identifier",
+            "name": "numberResults"
+          },
+          "right": {
+            "type": "Literal",
+            "value": opts.limit
+          }
+        },
+        "consequent": {
+          "type": "BlockStatement",
+          "body": [
+            {
+              "type": "ReturnStatement",
+              "argument": null
+            }
+          ]
+        },
+        "alternate": null
+      }
+    );
+  }
   code = this.generate_(f.declarations, f.code);
   generationTime = new Date() - generationStartTime;
   executionStartTime = new Date();
-  eval(code);
+  new Function(code).apply(this);
   executionTime = new Date() - executionStartTime;
   return {
     results: this.results,

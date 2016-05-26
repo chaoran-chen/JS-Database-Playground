@@ -121,7 +121,7 @@ jdp.proc.AvgAggregation.prototype.generateProcessingCode = function (groupCode) 
 };
 
 /** @override */
-jdp.proc.AvgAggregation.prototype.generateGetResultCode = function () {
-  // value.avg___sum/value.avg___count
-  return jdp.utils.codeGen.parse('value.' + this.alias_ + '___sum / value.' + this.alias_ + '___count')[0].expression;
+jdp.proc.AvgAggregation.prototype.generateGetResultCode = function (value) {
+  // p_tuple.avg___sum/p_tuple.avg___count
+  return jdp.utils.codeGen.parse(value + '.' + this.alias_ + '___sum / ' + value + '.' + this.alias_ + '___count')[0].expression;
 };

@@ -83,7 +83,7 @@ jdp.proc.CountAggregation.prototype.generateProcessingCode = function (groupCode
 };
 
 /** @override */
-jdp.proc.CountAggregation.prototype.generateGetResultCode = function () {
-  // value.count
-  return jdp.utils.codeGen.parse('value.' + this.alias_)[0].expression;
+jdp.proc.CountAggregation.prototype.generateGetResultCode = function (value) {
+  // p_tuple.count
+  return jdp.utils.codeGen.parse(value + '.' + this.alias_)[0].expression;
 };

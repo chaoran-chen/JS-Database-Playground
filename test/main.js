@@ -115,7 +115,8 @@ jdp.tpch.create(0.01).then(function (t) {
           1, l.l_discount)
       ))
     ]
-  )); // TODO order by, limit
+  )); // TODO order by
+  // tpchQ3.exec({limit: 10});
 
   tpchQ5 = new jdp.Query(tpch.store, new jdp.proc.GroupStep(
     new jdp.proc.EquiJoinStep(
@@ -258,7 +259,8 @@ jdp.tpch.create(0.01).then(function (t) {
         )
       )
     ]
-  )); // TODO order by, limit
+  )); // TODO order by
+  // tpchQ10.exec({limit: 20});
 });
 
 // printResult(query.exec());
