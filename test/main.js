@@ -12,6 +12,7 @@ goog.require('jdp.pred.Comparison');
 goog.require('jdp.pred.comparison.Type');
 goog.require('jdp.pred.Not');
 goog.require('jdp.proc.EquiJoinStep');
+goog.require('jdp.proc.OrderStep');
 goog.require('jdp.proc.arithmetic.Operator');
 goog.require('jdp.proc.arithmetic.Type');
 
@@ -39,136 +40,154 @@ jdp.tpch.create(0.01).then(function (t) {
   o = schema.orders;
   l = schema.lineitem;
 
-  tpchQ1 = new jdp.Query(tpch.store, new jdp.proc.GroupStep(
-    new jdp.proc.SelectionStep(new jdp.proc.ScanStep('lineitem', [
-        l.l_quantity,
-        l.l_extendedprice,
-        l.l_discount,
-        l.l_tax,
-        l.l_returnflag,
-        l.l_linestatus,
-        l.l_shipdate
-      ]),
-      new jdp.pred.Comparison(
-        jdp.pred.comparison.Type.LT,
-        jdp.utils.codeGen.identifier('lineitem___l_shipdate'),
-        jdp.utils.codeGen.literal(new Date('1998-12-01').getTime())
-      )
-    ), [l.l_returnflag, l.l_linestatus],
-    [
-      new jdp.proc.SumAggregation('sum_qty', l.l_quantity),
-      new jdp.proc.SumAggregation('sum_base_price', l.l_extendedprice),
-      new jdp.proc.SumAggregation('sum_disc_price', new jdp.proc.arithmetic.Operator(
-        jdp.proc.arithmetic.Type.MULTIPLICATION, l.l_extendedprice, new jdp.proc.arithmetic.Operator(
-          jdp.proc.arithmetic.Type.SUBTRACTION, 1, l.l_discount
+  tpchQ1 = new jdp.Query(tpch.store, new jdp.proc.OrderStep(
+    new jdp.proc.GroupStep(
+      new jdp.proc.SelectionStep(new jdp.proc.ScanStep('lineitem', [
+          l.l_quantity,
+          l.l_extendedprice,
+          l.l_discount,
+          l.l_tax,
+          l.l_returnflag,
+          l.l_linestatus,
+          l.l_shipdate
+        ]),
+        new jdp.pred.Comparison(
+          jdp.pred.comparison.Type.LT,
+          jdp.utils.codeGen.identifier('lineitem___l_shipdate'),
+          jdp.utils.codeGen.literal(new Date('1998-12-01').getTime())
         )
-      )),
-      new jdp.proc.SumAggregation('sum_charge', new jdp.proc.arithmetic.Operator(
-        jdp.proc.arithmetic.Type.MULTIPLICATION, new jdp.proc.arithmetic.Operator(
+      ), [l.l_returnflag, l.l_linestatus],
+      [
+        new jdp.proc.SumAggregation('sum_qty', l.l_quantity),
+        new jdp.proc.SumAggregation('sum_base_price', l.l_extendedprice),
+        new jdp.proc.SumAggregation('sum_disc_price', new jdp.proc.arithmetic.Operator(
           jdp.proc.arithmetic.Type.MULTIPLICATION, l.l_extendedprice, new jdp.proc.arithmetic.Operator(
             jdp.proc.arithmetic.Type.SUBTRACTION, 1, l.l_discount
           )
-        ), new jdp.proc.arithmetic.Operator(
-          jdp.proc.arithmetic.Type.ADDITION, 1, l.l_tax
-        )
-      )),
-      new jdp.proc.AvgAggregation('avg_qty', l.l_quantity),
-      new jdp.proc.AvgAggregation('avg_price', l.l_extendedprice),
-      new jdp.proc.AvgAggregation('avg_disc', l.l_discount),
-      new jdp.proc.CountAggregation('count_order')
-      // TODO order by
+        )),
+        new jdp.proc.SumAggregation('sum_charge', new jdp.proc.arithmetic.Operator(
+          jdp.proc.arithmetic.Type.MULTIPLICATION, new jdp.proc.arithmetic.Operator(
+            jdp.proc.arithmetic.Type.MULTIPLICATION, l.l_extendedprice, new jdp.proc.arithmetic.Operator(
+              jdp.proc.arithmetic.Type.SUBTRACTION, 1, l.l_discount
+            )
+          ), new jdp.proc.arithmetic.Operator(
+            jdp.proc.arithmetic.Type.ADDITION, 1, l.l_tax
+          )
+        )),
+        new jdp.proc.AvgAggregation('avg_qty', l.l_quantity),
+        new jdp.proc.AvgAggregation('avg_price', l.l_extendedprice),
+        new jdp.proc.AvgAggregation('avg_disc', l.l_discount),
+        new jdp.proc.CountAggregation('count_order')
+      ]
+    ),
+    [
+      {column: l.l_returnflag, order: lf.Order.ASC},
+      {column: l.l_linestatus, order: lf.Order.ASC}
     ]
   ));
+  // tpchQ1.exec();
 
-  tpchQ3 = new jdp.Query(tpch.store, new jdp.proc.GroupStep(
-    new jdp.proc.EquiJoinStep(
-      new jdp.proc.EquiJoinStep(
-        new jdp.proc.SelectionStep(
-          new jdp.proc.ScanStep('customer', [c.c_mktsegment, c.c_custkey]),
-          new jdp.pred.Comparison(jdp.pred.comparison.Type.EQ,
-            jdp.utils.codeGen.identifier('customer___c_mktsegment'),
-            jdp.utils.codeGen.literal('BUILDING')
-          )
-        ),
-        new jdp.proc.SelectionStep(
-          new jdp.proc.ScanStep('orders', [o.o_orderdate, o.o_custkey, o.o_orderkey, o.o_shippriority]),
-          new jdp.pred.Comparison(jdp.pred.comparison.Type.LT,
-            jdp.utils.codeGen.identifier('orders___o_orderdate'),
-            jdp.utils.codeGen.literal(new Date('1995-03-15').getTime())
-          )
-        ),
-        [{left: c.c_custkey, right: o.o_custkey}]
-      ),
-      new jdp.proc.SelectionStep(
-        new jdp.proc.ScanStep('lineitem', [l.l_orderkey, l.l_extendedprice, l.l_discount, l.l_shipdate]),
-        new jdp.pred.Comparison(jdp.pred.comparison.Type.GT,
-          jdp.utils.codeGen.identifier('lineitem___l_shipdate'),
-          jdp.utils.codeGen.literal(new Date('1995-03-15').getTime())
-        )
-      ),
-      [{left: o.o_orderkey, right: l.l_orderkey}]
-    ),
-    [l.l_orderkey, o.o_orderdate, o.o_shippriority],
-    [
-      new jdp.proc.SumAggregation('revenue', new jdp.proc.arithmetic.Operator(jdp.proc.arithmetic.Type.MULTIPLICATION,
-        l.l_extendedprice, new jdp.proc.arithmetic.Operator(jdp.proc.arithmetic.Type.SUBTRACTION,
-          1, l.l_discount)
-      ))
-    ]
-  )); // TODO order by
-  // tpchQ3.exec({limit: 10});
-
-  tpchQ5 = new jdp.Query(tpch.store, new jdp.proc.GroupStep(
-    new jdp.proc.EquiJoinStep(
-      new jdp.proc.ScanStep('supplier', [s.s_suppkey, s.s_nationkey]),
+  tpchQ3 = new jdp.Query(tpch.store, new jdp.proc.OrderStep(
+    new jdp.proc.GroupStep(
       new jdp.proc.EquiJoinStep(
         new jdp.proc.EquiJoinStep(
-          new jdp.proc.EquiJoinStep(
-            new jdp.proc.EquiJoinStep(
-              new jdp.proc.SelectionStep(
-                new jdp.proc.ScanStep('region', [r.r_name, r.r_regionkey]),
-                new jdp.pred.Comparison(jdp.pred.comparison.Type.EQ,
-                  jdp.utils.codeGen.identifier('region___r_name'),
-                  jdp.utils.codeGen.literal('ASIA'))
-              ),
-              new jdp.proc.ScanStep('nation', [n.n_name, n.n_regionkey, n.n_nationkey]),
-              [{left: r.r_regionkey, right: n.n_regionkey}]
-            ),
-            new jdp.proc.ScanStep('customer', [c.c_nationkey, c.c_custkey]),
-            [{left: n.n_nationkey, right: c.c_nationkey}]
+          new jdp.proc.SelectionStep(
+            new jdp.proc.ScanStep('customer', [c.c_mktsegment, c.c_custkey]),
+            new jdp.pred.Comparison(jdp.pred.comparison.Type.EQ,
+              jdp.utils.codeGen.identifier('customer___c_mktsegment'),
+              jdp.utils.codeGen.literal('BUILDING')
+            )
           ),
           new jdp.proc.SelectionStep(
-            new jdp.proc.ScanStep('orders', [o.o_custkey, o.o_orderkey, o.o_orderdate]),
-            new jdp.pred.Connection(jdp.pred.connection.Type.AND,
-              new jdp.pred.Comparison(jdp.pred.comparison.Type.GTE,
-                jdp.utils.codeGen.identifier('orders___o_orderdate'),
-                jdp.utils.codeGen.literal(new Date('1994-01-01').getTime())
-              ),
-              new jdp.pred.Comparison(jdp.pred.comparison.Type.LT,
-                jdp.utils.codeGen.identifier('orders___o_orderdate'),
-                jdp.utils.codeGen.literal(new Date('1995-01-01').getTime()))
+            new jdp.proc.ScanStep('orders', [o.o_orderdate, o.o_custkey, o.o_orderkey, o.o_shippriority]),
+            new jdp.pred.Comparison(jdp.pred.comparison.Type.LT,
+              jdp.utils.codeGen.identifier('orders___o_orderdate'),
+              jdp.utils.codeGen.literal(new Date('1995-03-15').getTime())
             )
           ),
           [{left: c.c_custkey, right: o.o_custkey}]
         ),
-        new jdp.proc.ScanStep('lineitem', [l.l_orderkey, l.l_extendedprice, l.l_discount, l.l_suppkey]),
+        new jdp.proc.SelectionStep(
+          new jdp.proc.ScanStep('lineitem', [l.l_orderkey, l.l_extendedprice, l.l_discount, l.l_shipdate]),
+          new jdp.pred.Comparison(jdp.pred.comparison.Type.GT,
+            jdp.utils.codeGen.identifier('lineitem___l_shipdate'),
+            jdp.utils.codeGen.literal(new Date('1995-03-15').getTime())
+          )
+        ),
         [{left: o.o_orderkey, right: l.l_orderkey}]
       ),
+      [l.l_orderkey, o.o_orderdate, o.o_shippriority],
       [
-        {left: s.s_suppkey, right: l.l_suppkey},
-        {left: s.s_nationkey, right: c.c_nationkey},
-        {left: s.s_nationkey, right: n.n_nationkey}
+        new jdp.proc.SumAggregation('revenue', new jdp.proc.arithmetic.Operator(jdp.proc.arithmetic.Type.MULTIPLICATION,
+          l.l_extendedprice, new jdp.proc.arithmetic.Operator(jdp.proc.arithmetic.Type.SUBTRACTION,
+            1, l.l_discount)
+        ))
       ]
     ),
-    [n.n_name],
     [
-      new jdp.proc.SumAggregation('revenue', new jdp.proc.arithmetic.Operator(
-        jdp.proc.arithmetic.Type.MULTIPLICATION, l.l_extendedprice, new jdp.proc.arithmetic.Operator(
-          jdp.proc.arithmetic.Type.SUBTRACTION, 1, l.l_discount
-        )
-      ))
+      {column: new jdp.ColumnDefinition('revenue', lf.Type.NUMBER), order: lf.Order.DESC},
+      {column: o.o_orderdate, order: lf.Order.ASC}
     ]
-  )); // TODO order by
+  ));
+  // tpchQ3.exec({limit: 10});
+
+  tpchQ5 = new jdp.Query(tpch.store, new jdp.proc.OrderStep(
+    new jdp.proc.GroupStep(
+      new jdp.proc.EquiJoinStep(
+        new jdp.proc.ScanStep('supplier', [s.s_suppkey, s.s_nationkey]),
+        new jdp.proc.EquiJoinStep(
+          new jdp.proc.EquiJoinStep(
+            new jdp.proc.EquiJoinStep(
+              new jdp.proc.EquiJoinStep(
+                new jdp.proc.SelectionStep(
+                  new jdp.proc.ScanStep('region', [r.r_name, r.r_regionkey]),
+                  new jdp.pred.Comparison(jdp.pred.comparison.Type.EQ,
+                    jdp.utils.codeGen.identifier('region___r_name'),
+                    jdp.utils.codeGen.literal('ASIA'))
+                ),
+                new jdp.proc.ScanStep('nation', [n.n_name, n.n_regionkey, n.n_nationkey]),
+                [{left: r.r_regionkey, right: n.n_regionkey}]
+              ),
+              new jdp.proc.ScanStep('customer', [c.c_nationkey, c.c_custkey]),
+              [{left: n.n_nationkey, right: c.c_nationkey}]
+            ),
+            new jdp.proc.SelectionStep(
+              new jdp.proc.ScanStep('orders', [o.o_custkey, o.o_orderkey, o.o_orderdate]),
+              new jdp.pred.Connection(jdp.pred.connection.Type.AND,
+                new jdp.pred.Comparison(jdp.pred.comparison.Type.GTE,
+                  jdp.utils.codeGen.identifier('orders___o_orderdate'),
+                  jdp.utils.codeGen.literal(new Date('1994-01-01').getTime())
+                ),
+                new jdp.pred.Comparison(jdp.pred.comparison.Type.LT,
+                  jdp.utils.codeGen.identifier('orders___o_orderdate'),
+                  jdp.utils.codeGen.literal(new Date('1995-01-01').getTime()))
+              )
+            ),
+            [{left: c.c_custkey, right: o.o_custkey}]
+          ),
+          new jdp.proc.ScanStep('lineitem', [l.l_orderkey, l.l_extendedprice, l.l_discount, l.l_suppkey]),
+          [{left: o.o_orderkey, right: l.l_orderkey}]
+        ),
+        [
+          {left: s.s_suppkey, right: l.l_suppkey},
+          {left: s.s_nationkey, right: c.c_nationkey},
+          {left: s.s_nationkey, right: n.n_nationkey}
+        ]
+      ),
+      [n.n_name],
+      [
+        new jdp.proc.SumAggregation('revenue', new jdp.proc.arithmetic.Operator(
+          jdp.proc.arithmetic.Type.MULTIPLICATION, l.l_extendedprice, new jdp.proc.arithmetic.Operator(
+            jdp.proc.arithmetic.Type.SUBTRACTION, 1, l.l_discount
+          )
+        ))
+      ]
+    ),
+    [
+      {column: new jdp.ColumnDefinition('revenue', lf.Type.NUMBER), order: lf.Order.DESC}
+    ]
+  ));
+  // tpchQ5.exec();
 
   tpchQ6 = new jdp.Query(tpch.store, new jdp.proc.GroupStep(
     new jdp.proc.SelectionStep(
@@ -207,6 +226,7 @@ jdp.tpch.create(0.01).then(function (t) {
       jdp.proc.arithmetic.Type.MULTIPLICATION, l.l_extendedprice, l.l_discount
     ))]
   ));
+  // tpchQ6.exec();
 
   tpchQ10 = new jdp.Query(tpch.store, new jdp.proc.GroupStep(
     new jdp.proc.EquiJoinStep(
