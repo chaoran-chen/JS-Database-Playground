@@ -22,22 +22,22 @@ jdp.proc.arithmetic.Operator = function (type, valueLeft, valueRight) {
  * @returns {object} - An Expression object
  */
 jdp.proc.arithmetic.Operator.prototype.generateCode = function () {
-  return jdp.utils.codeGen.parse(this.generateExpressionString_())[0].expression;
+  return jdp.utils.codeGen.parse(this.generateExpressionString())[0].expression;
 };
 
-jdp.proc.arithmetic.Operator.prototype.generateExpressionString_ = function () {
+jdp.proc.arithmetic.Operator.prototype.generateExpressionString = function () {
   var left, right;
   if (this.valueLeft_.getFullName) {
     left = this.valueLeft_.getFullName();
-  } else if (this.valueLeft_.generateExpressionString_) {
-    left = this.valueLeft_.generateExpressionString_();
+  } else if (this.valueLeft_.generateExpressionString) {
+    left = this.valueLeft_.generateExpressionString();
   } else {
     left = this.valueLeft_;
   }
   if (this.valueRight_.getFullName) {
     right = this.valueRight_.getFullName();
-  } else if (this.valueRight_.generateExpressionString_) {
-    right = this.valueRight_.generateExpressionString_();
+  } else if (this.valueRight_.generateExpressionString) {
+    right = this.valueRight_.generateExpressionString();
   } else {
     right = this.valueRight_;
   }
